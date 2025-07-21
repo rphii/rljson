@@ -1,28 +1,18 @@
 sources = [
-  'so-cmp.c',
-  'so-find.c',
-  'so-heap.c',
-  'so-input.c',
-  'so-print.c',
-  'so-trim.c',
-  'so.c'
+  'json.c',
   ]
 
 headers = [
-  'endian.h',
-  'so-cmp-attr.h',
-  'so-cmp.h',
-  'so-find.h',
-  'so-heap.h',
-  'so-input.h',
-  'so-print.h',
-  'so-trim.h',
-  'so.h'
+  'json.h',
   ]
 
+dep_rphiic = dependency('rphiic', required: true)
+dep_rphiiso = dependency('rphiiso', required: true)
+
 install_headers(headers, subdir: 'rphii')
-rphiiso = library('rphiiso',
+rphiijson = library('rphiijson',
   sources,
+  dependencies: [dep_rphiic, dep_rphiiso],
   install: true,
   )
 

@@ -1,6 +1,7 @@
 #ifndef RPHIIC_JSON_H
 
-#include "str.h"
+#include <rphii/err.h>
+#include <rphii/so.h>
 
 #define JSON_DEPTH_MAX  4096
 
@@ -17,14 +18,9 @@ typedef enum {
     JSON_NULL,
 } JsonList;
 
-//typedef struct JsonParseFrame {
-//    void *user;
-//    JsonParseFunc *next;
-//} JsonParseFrame;
-
 typedef struct JsonParseValue {
     union {
-        Str s;
+        So s;
         bool b;
     };
     JsonList id;
@@ -37,7 +33,7 @@ typedef struct JsonParseSettings {
 typedef void *(*JsonParseCallback)(void **user, JsonParseValue key, JsonParseValue *val);
 
 typedef struct JsonParse {
-    Str head;
+    So_Ref head;
     JsonParseValue key;
     size_t depth;
     JsonParseCallback callback;
@@ -45,26 +41,14 @@ typedef struct JsonParse {
     void *user;
 } JsonParse;
 
-Str json_parse_value_str(JsonParseValue v);
+So json_parse_value_str(JsonParseValue v);
 
-ErrDecl json_parse_valid(Str input);
+ErrDecl json_parse_valid(So input);
 
 #define ERR_json_parse(...) "failed parsing json (invalid input)"
-ErrDecl json_parse(Str input, JsonParseCallback callback, void *user);
+ErrDecl json_parse(So input, JsonParseCallback callback, void *user);
 
-#if 0
-bool json_parse_object(JsonParse *p);
-bool json_parse_array(JsonParse *p);
-bool json_parse_value(JsonParse *p, JsonParseValue *v);
-/* atomic */
-bool json_parse_null(JsonParse *p);
-bool json_parse_bool(JsonParse *p, bool *val);
-bool json_parse_string(JsonParse *p, Str *val);
-bool json_parse_number(JsonParse *p, Str *val);
-#endif
-
-void json_fmt_str(Str *out, Str json_str); /* creates a new string; additional memory allocation */
-void json_fix_str(Str *out, Str json_str); /* modifies the existing string; no additional memory allocation */
+void json_fix_so(So *out, So json_str); /* modifies the existing string; no additional memory allocation */
 
 #define RPHIIC_JSON_H
 #endif
