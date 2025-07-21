@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
-#include <rphii/so-uc.h>
-#include <rphii/so-as.h>
+#include <rl/so-uc.h>
+#include <rl/so-as.h>
 #include "json.h"
 
 bool json_parse_value(JsonParse *p, JsonParseValue *v);

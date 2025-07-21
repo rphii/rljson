@@ -1,11 +1,11 @@
-project('rphiijson', 'c')
+project('rljson', 'c')
 subdir('src')
 
 pkg = import('pkgconfig')
 pkg.generate(
-  libraries: rphiijson,
+  libraries: rljson,
   version: '9999',
-  name: 'rphiijson',
+  name: 'rljson',
   description: 'Immediate JSON verifier, parser in C',
   )
 
