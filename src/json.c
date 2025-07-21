@@ -1,23 +1,27 @@
+#include <stdlib.h>
+#include <stdbool.h>
+#include <rphii/so-uc.h>
+#include <rphii/so-as.h>
 #include "json.h"
-#include "utf8.h"
 
 bool json_parse_value(JsonParse *p, JsonParseValue *v);
 
-Str json_parse_value_str(JsonParseValue v) {
+So json_parse_value_str(JsonParseValue v) {
     switch(v.id) {
         case JSON_STRING:
-        case JSON_OBJECT: //return str("OBJECT");
+        case JSON_OBJECT: //return so("OBJECT");
         case JSON_NUMBER: return v.s;
-        case JSON_BOOL: return v.b ? str("true") : str("false");
-        case JSON_ARRAY: return str("ARRAY");
-        case JSON_NULL: return str("null");
+        case JSON_BOOL: return v.b ? so("true") : so("false");
+        case JSON_ARRAY: return so("ARRAY");
+        case JSON_NULL: return so("null");
     }
+    return so("(null)");
 }
 
 /* return true on match */
 bool json_parse_ch(JsonParse *p, char c) {
     ASSERT_ARG(p);
-    if(!str_len_raw(p->head)) return false;
+    if(!p->head.len) return false;
     bool result = (bool)(*p->head.str == c);
     if(result) {
         ++p->head.str;
@@ -27,10 +31,10 @@ bool json_parse_ch(JsonParse *p, char c) {
 }
 
 /* return true on match */
-bool json_parse_any(JsonParse *p, StrC s) {
+bool json_parse_any(JsonParse *p, char *s) {
     ASSERT_ARG(p);
-    if(!str_len_raw(p->head)) return false;
-    char *result = strchr(s.str, *p->head.str);
+    if(!p->head.len) return false;
+    char *result = strchr(s, *p->head.str);
     if(result && *result) {
         ++p->head.str;
         --p->head.len;
@@ -41,17 +45,17 @@ bool json_parse_any(JsonParse *p, StrC s) {
 
 void json_parse_ws(JsonParse *p) {
     ASSERT_ARG(p);
-    while(json_parse_any(p, str(" \t\v\n"))) {}
+    while(json_parse_any(p, " \t\v\n")) {}
 }
 
 /* return true on successful parse */
-bool json_parse_string(JsonParse *p, Str *val) {
+bool json_parse_string(JsonParse *p, So *val) {
     ASSERT_ARG(p);
     ASSERT_ARG(val);
     JsonParse q = *p;
     if(!json_parse_ch(&q, '"')) goto invalid;
     int escape = 0;
-    while(str_len_raw(q.head)) {
+    while(q.head.len) {
         if(escape < 0) {
             escape = 0;
             switch(*q.head.str) {
@@ -69,25 +73,23 @@ bool json_parse_string(JsonParse *p, Str *val) {
             ++q.head.str;
             --q.head.len;
         } else if(escape) {
-            if(!json_parse_any(&q, str("0123456789abcdefABCDEF"))) goto invalid;
+            if(!json_parse_any(&q, "0123456789abcdefABCDEF")) goto invalid;
             --escape;
         } else if(json_parse_ch(&q, '\\')) {
             escape = -1;
         } else if(json_parse_ch(&q, '"')) {
-            *val = str_ll(p->head.str + 1, q.head.str - p->head.str - 2);
+            *val = so_ll(p->head.str + 1, q.head.str - p->head.str - 2);
             p->head = q.head;
             if(p->key.id != JSON_ARRAY && p->key.id != JSON_OBJECT) {
-                if(p->settings.verbose) printf("%*s[string] '%.*s' : '%.*s'\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)), STR_F(*val));
+                if(p->settings.verbose) printf("%*s[string] '%.*s' : '%.*s'\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)), SO_F(*val));
             }
             return true;
         } else if(*q.head.str >= ' ') {
             ++q.head.str;
             --q.head.len;
         } else {
-            U8Str u8 = {0};
-            U8Point u8p = {0};
-            str_as_cstr(q.head, u8, U8_CAP);
-            if(cstr_to_u8_point(u8, &u8p) || u8p.val < ' ') {
+            So_Uc_Point u8p = {0};
+            if(so_uc_point(so_ll(q.head.str, q.head.len), &u8p)) {
                 goto invalid;
             }
             q.head.str += u8p.bytes;
@@ -96,7 +98,7 @@ bool json_parse_string(JsonParse *p, Str *val) {
     }
 invalid:
     if(p->settings.verbose) {
-        printf("%*s[invalid string] %.*s", (int)p->depth, "", STR_F(p->head));
+        printf("%*s[invalid string] %.*s", (int)p->depth, "", (int)p->head.len, p->head.str);
     }
     return false;
 }
@@ -111,7 +113,7 @@ bool json_parse_bool(JsonParse *p, bool *val) {
         if(!json_parse_ch(&q, 'e')) return false;
         *val = true;
         if(p->key.id != JSON_ARRAY && p->key.id != JSON_OBJECT) {
-            if(p->settings.verbose) printf("%*s[bool] '%.*s' : true\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)));
+            if(p->settings.verbose) printf("%*s[bool] '%.*s' : true\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)));
         }
         p->head = q.head;
         return true;
@@ -123,7 +125,7 @@ bool json_parse_bool(JsonParse *p, bool *val) {
         if(!json_parse_ch(&q, 'e')) return false;
         *val = false;
         if(p->key.id != JSON_ARRAY && p->key.id != JSON_OBJECT) {
-            if(p->settings.verbose) printf("%*s[bool] '%.*s' : false\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)));
+            if(p->settings.verbose) printf("%*s[bool] '%.*s' : false\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)));
         }
         p->head = q.head;
         return true;
@@ -132,10 +134,10 @@ bool json_parse_bool(JsonParse *p, bool *val) {
 }
 
 
-#define JSON_DIGITS  str("0123456789")
-#define JSON_DIGIT1  str("123456789")
+#define JSON_DIGITS  "0123456789"
+#define JSON_DIGIT1  "123456789"
 
-bool json_parse_number(JsonParse *p, Str *val) {
+bool json_parse_number(JsonParse *p, So *val) {
     ASSERT_ARG(p);
     ASSERT_ARG(val);
     JsonParse q = *p;
@@ -150,17 +152,17 @@ bool json_parse_number(JsonParse *p, Str *val) {
         if(!json_parse_any(&q, JSON_DIGITS)) return false;
         while(json_parse_any(&q, JSON_DIGITS)) {}
     }
-    if(json_parse_any(&q, str("eE"))) {
-        json_parse_any(&q, str("+-"));
+    if(json_parse_any(&q, "eE")) {
+        json_parse_any(&q, "+-");
         if(!json_parse_any(&q, JSON_DIGITS)) return false;
         while(json_parse_any(&q, JSON_DIGITS)) {}
     }
-    Str result = str_ll(p->head.str, q.head.str - p->head.str);
-    size_t len = str_len_raw(result);
+    So result = so_ll(p->head.str, q.head.str - p->head.str);
+    size_t len = so_len(result);
     if(len) {
         *val = result;
         if(p->key.id != JSON_ARRAY && p->key.id != JSON_OBJECT) {
-            if(p->settings.verbose) printf("%*s[number] '%.*s' : '%.*s'\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)), STR_F(*val));
+            if(p->settings.verbose) printf("%*s[number] '%.*s' : '%.*s'\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)), SO_F(*val));
         }
         p->head = q.head;
     }
@@ -176,7 +178,7 @@ bool json_parse_null(JsonParse *p) {
         if(!json_parse_ch(&q, 'l')) return false;
         p->head = q.head;
         if(p->key.id != JSON_ARRAY && p->key.id != JSON_OBJECT) {
-            if(p->settings.verbose) printf("%*s[null] '%.*s'\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)));
+            if(p->settings.verbose) printf("%*s[null] '%.*s'\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)));
         }
         return true;
     }
@@ -192,7 +194,7 @@ bool json_parse_array(JsonParse *p) {
     ++q.depth;
     if(q.depth >= JSON_DEPTH_MAX) return false;
     if(p->depth) {
-        if(p->settings.verbose) printf("%*s[array enter -> '%.*s']\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)));
+        if(p->settings.verbose) printf("%*s[array enter -> '%.*s']\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)));
         if(p->callback) q.callback = p->callback(&q.user, p->key, 0);
     }
     json_parse_ws(&q);
@@ -203,17 +205,17 @@ bool json_parse_array(JsonParse *p) {
             else return false;
         }
         if(q.callback && v.id != JSON_OBJECT && v.id != JSON_ARRAY) {
-            if(p->settings.verbose) printf("%*s[array] '%.*s' <- '%.*s'\n", (int)q.depth, "", STR_F(json_parse_value_str(v)), STR_F(json_parse_value_str(p->key)));
+            if(p->settings.verbose) printf("%*s[array] '%.*s' <- '%.*s'\n", (int)q.depth, "", SO_F(json_parse_value_str(v)), SO_F(json_parse_value_str(p->key)));
             void *user = q.user; //p->user;
             q.callback(&user, q.key, &v);
         }
         if(!json_parse_ch(&q, ',')) break;
         first = false;
-    } while(str_len_raw(q.head));
+    } while(q.head.len);
     if(!json_parse_ch(&q, ']')) return false;
     p->head = q.head;
     if(p->depth) {
-        if(p->settings.verbose) printf("%*s[array exit <- '%.*s']\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)));
+        if(p->settings.verbose) printf("%*s[array exit <- '%.*s']\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)));
     }
     return true;
 }
@@ -226,7 +228,7 @@ bool json_parse_object(JsonParse *p) {
     ++q.depth;
     if(q.depth >= JSON_DEPTH_MAX) return false;
     if(p->depth) {
-        if(p->settings.verbose) printf("%*s[object enter -> '%.*s']\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)));
+        if(p->settings.verbose) printf("%*s[object enter -> '%.*s']\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)));
         if(p->callback) q.callback = p->callback(&q.user, p->key, 0);
     }
     json_parse_ws(&q);
@@ -245,7 +247,7 @@ bool json_parse_object(JsonParse *p) {
         if(!json_parse_value(&q, &v)) return false;
         /* key-value pair found */
         if(v.id != JSON_OBJECT && v.id != JSON_ARRAY) {
-            if(p->settings.verbose) printf("%*s[object] '%.*s' : '%.*s' %u <- '%.*s'\n", (int)q.depth, "", STR_F(json_parse_value_str(k)), STR_F(json_parse_value_str(v)), v.id, STR_F(json_parse_value_str(p->key)));
+            if(p->settings.verbose) printf("%*s[object] '%.*s' : '%.*s' %u <- '%.*s'\n", (int)q.depth, "", SO_F(json_parse_value_str(k)), SO_F(json_parse_value_str(v)), v.id, SO_F(json_parse_value_str(p->key)));
             //q.user = p->user;
             void *user = q.user;
             if(q.callback) q.callback(&user, q.key, &v);
@@ -253,11 +255,11 @@ bool json_parse_object(JsonParse *p) {
         /* next */
         if(!json_parse_ch(&q, ',')) break;
         first = false;
-    } while(str_len_raw(q.head));
+    } while(q.head.len);
     if(!json_parse_ch(&q, '}')) return false;
     p->head = q.head;
     if(p->depth) {
-        if(p->settings.verbose) printf("%*s[object exit <- '%.*s']\n", (int)p->depth, "", STR_F(json_parse_value_str(p->key)));
+        if(p->settings.verbose) printf("%*s[object exit <- '%.*s']\n", (int)p->depth, "", SO_F(json_parse_value_str(p->key)));
     }
     return true;
 }
@@ -279,24 +281,24 @@ valid:
     return true;
 }
 
-ErrDecl json_parse_valid(Str input) {
+ErrDecl json_parse_valid(So input) {
     JsonParseValue v = {0};
     JsonParse q = {
-        .head = input,
+        .head = so_ref(input),
         .settings.verbose = false,
     };
     if(json_parse_value(&q, &v)) goto valid;
     return -1;
 valid:
     json_parse_ws(&q);
-    return str_len_raw(q.head);
+    return q.head.len;
 }
 
-ErrDecl json_parse(Str input, JsonParseCallback callback, void *user) {
+ErrDecl json_parse(So input, JsonParseCallback callback, void *user) {
     if(json_parse_valid(input)) goto invalid;
     JsonParseValue v = {0};
     JsonParse q = {
-        .head = input,
+        .head = so_ref(input),
         .callback = callback,
         .user = user,
         .settings.verbose = false,
@@ -307,72 +309,29 @@ invalid:
     return -1;
 valid:
     json_parse_ws(&q);
-    return str_len_raw(q.head);
+    return q.head.len;
 }
 
-void json_fmt_str(Str *out, Str json_str) {
-    size_t len = str_len_raw(json_str);
-    int escape = 0;
-    size_t begin = 0;
-    for(size_t i = 0; i < len; ++i) {
-        char c = str_at(json_str, i);
-        if(!escape && c == '\\') {
-            escape = -1;
-        } else if(escape < 0) {
-            escape = 0;
-            switch(c) {
-                case 'b': str_push(out, '\b'); break;
-                case '"': str_push(out, '\"'); break;
-                case '\'': str_push(out, '\''); break;
-                case '/': str_push(out, '/'); break;
-                case 'f': str_push(out, '\f'); break;
-                case 'n': str_push(out, '\n'); break;
-                case 'r': str_push(out, '\r'); break;
-                case 't': str_push(out, '\t'); break;
-                case 'u': escape = 4; break;
-                default: break; /* TODO what do ? should never reach this */
-            }
-        } else if(escape > 0) {
-            --escape;
-            if(escape == 3) begin = i;
-            if(escape == 0) {
-                ASSERT(4 == i - begin + 1, "expect to have 4 characters...");
-                Str num = str_ll(str_it(json_str, begin), 4);
-                size_t z = 0;
-                if(!str_as_size(num, &z, 16)) {
-                    U8Point p = { .val = z };
-                    U8Str u = {0};
-                    if(!cstr_from_u8_point(u, &p)) {
-                        str_extend(out, str_ll(u, p.bytes));
-                    }
-                }
-            }
-        } else {
-            str_push(out, c);
-        }
-    }
-}
-
-void json_fix_str(Str *out, Str json_str) {
-    size_t len = str_len_raw(json_str);
+void json_fix_so(So *out, So json_str) {
+    So_Ref ref = so_ref(json_str);
     int escape = 0;
     size_t begin = 0;
     size_t j = 0;
-    for(size_t i = 0; i < len; ++i) {
-        char c = str_at(json_str, i);
+    for(size_t i = 0; i < ref.len; ++i) {
+        char c = ref.str[i];
         if(!escape && c == '\\') {
             escape = -1;
         } else if(escape < 0) {
             escape = 0;
             switch(c) {
-                case 'b':  *str_it(json_str, j++) = '\b'; break;
-                case '"':  *str_it(json_str, j++) = '\"'; break;
-                case '\'': *str_it(json_str, j++) = '\''; break;
-                case '/':  *str_it(json_str, j++) = '/';  break;
-                case 'f':  *str_it(json_str, j++) = '\f'; break;
-                case 'n':  *str_it(json_str, j++) = '\n'; break;
-                case 'r':  *str_it(json_str, j++) = '\r'; break;
-                case 't':  *str_it(json_str, j++) = '\t'; break;
+                case 'b':  *so_it(json_str, j++) = '\b'; break;
+                case '"':  *so_it(json_str, j++) = '\"'; break;
+                case '\'': *so_it(json_str, j++) = '\''; break;
+                case '/':  *so_it(json_str, j++) = '/';  break;
+                case 'f':  *so_it(json_str, j++) = '\f'; break;
+                case 'n':  *so_it(json_str, j++) = '\n'; break;
+                case 'r':  *so_it(json_str, j++) = '\r'; break;
+                case 't':  *so_it(json_str, j++) = '\t'; break;
                 case 'u': escape = 4; break;
                 default: break; /* TODO what do ? should never reach this */
             }
@@ -381,24 +340,26 @@ void json_fix_str(Str *out, Str json_str) {
             if(escape == 3) begin = i;
             if(escape == 0) {
                 ASSERT(4 == i - begin + 1, "expect to have 4 characters...");
-                Str num = str_ll(str_it(json_str, begin), 4);
+                So num = so_ll(so_it(json_str, begin), 4);
                 size_t z = 0;
-                if(!str_as_size(num, &z, 16)) {
-                    U8Point p = { .val = z };
-                    U8Str u = {0};
-                    if(!cstr_from_u8_point(u, &p)) {
-                        ASSERT(p.bytes <= 3, "expect to have 3 or less characters (0xFFFF max)...");
-                        for(size_t k = 0; k < p.bytes; ++k) {
-                            *str_it(json_str, j++) = u[k];
+                if(!so_as_size(num, &z, 16)) {
+                    So_Uc_Point u8p = { .val = z };
+                    So u8 = {0};
+                    if(!so_uc_fmt_point(&u8, &u8p)) {
+                        So_Ref p = so_ref(u8);
+                        ASSERT(p.len <= 3, "expect to have 3 or less characters (0xFFFF max)...");
+                        for(size_t k = 0; k < p.len; ++k) {
+                            *so_it(json_str, j++) = p.str[k];
                         }
                     }
                 }
             }
         } else {
-            *str_it(json_str, j++) = c;
+            *so_it(json_str, j++) = c;
         }
     }
-    json_str.len = j;
+    ASSERT(j < so_len(json_str), "we only want to shrink the string!");
+    so_resize(&json_str, j);
     *out = json_str;
 }
 

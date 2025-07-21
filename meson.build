@@ -1,14 +1,12 @@
-project('rphiiso', 'c')
+project('rphiijson', 'c')
 subdir('src')
-subdir('man')
-subdir('examples')
 
 pkg = import('pkgconfig')
 pkg.generate(
-  libraries: rphiiso,
+  libraries: rphiijson,
   version: '9999',
-  name: 'rphiiso',
-  description: 'Small String Optimized and Dynamically Allocatable String',
+  name: 'rphiijson',
+  description: 'Immediate JSON verifier, parser in C',
   )
 
 
