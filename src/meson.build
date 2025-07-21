@@ -6,13 +6,13 @@ headers = [
   'json.h',
   ]
 
-dep_rphiic = dependency('rphiic', required: true)
-dep_rphiiso = dependency('rphiiso', required: true)
+dep_rlc = dependency('rlc', required: true)
+dep_rlso = dependency('rlso', required: true)
 
-install_headers(headers, subdir: 'rphii')
-rphiijson = library('rphiijson',
+install_headers(headers, subdir: 'rl')
+rljson = library('rljson',
   sources,
-  dependencies: [dep_rphiic, dep_rphiiso],
+  dependencies: [dep_rlc, dep_rlso],
   install: true,
   )
 
