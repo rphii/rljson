@@ -25,7 +25,7 @@ pkg.generate(
   description: 'Immediate JSON verifier, parser in C',
   )
 
-rlarg_dep = declare_dependency(
+rljson_dep = declare_dependency(
   link_with: librljson,
   include_directories: '.',
   )
