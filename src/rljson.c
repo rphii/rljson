@@ -355,7 +355,7 @@ void json_fix_so(So *out, So json_str) {
             *so_it(json_str, j++) = c;
         }
     }
-    ASSERT(j < so_len(json_str), "we only want to shrink the string!");
+    ASSERT(j <= so_len(json_str), "we only want to shrink the string!");
     so_resize(&json_str, j);
     *out = json_str;
 }
