@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
-#include <rl/so-uc.h>
-#include <rl/so-as.h>
-#include "json.h"
+#include <rlso.h>
+#include "rljson.h"
 
 bool json_parse_value(JsonParse *p, JsonParseValue *v);
 
@@ -24,8 +23,7 @@ bool json_parse_ch(JsonParse *p, char c) {
     if(!p->head.len) return false;
     bool result = (bool)(*p->head.str == c);
     if(result) {
-        ++p->head.str;
-        --p->head.len;
+        so_shift(&p->head, 1);
     }
     return result;
 }
@@ -36,8 +34,7 @@ bool json_parse_any(JsonParse *p, char *s) {
     if(!p->head.len) return false;
     char *result = strchr(s, *p->head.str);
     if(result && *result) {
-        ++p->head.str;
-        --p->head.len;
+        so_shift(&p->head, 1);
         return true;
     }
     return false;
@@ -284,7 +281,7 @@ valid:
 ErrDecl json_parse_valid(So input) {
     JsonParseValue v = {0};
     JsonParse q = {
-        .head = so_ref(input),
+        .head = input,
         .settings.verbose = false,
     };
     if(json_parse_value(&q, &v)) goto valid;
@@ -298,7 +295,7 @@ ErrDecl json_parse(So input, JsonParseCallback callback, void *user) {
     if(json_parse_valid(input)) goto invalid;
     JsonParseValue v = {0};
     JsonParse q = {
-        .head = so_ref(input),
+        .head = input,
         .callback = callback,
         .user = user,
         .settings.verbose = false,
@@ -313,7 +310,7 @@ valid:
 }
 
 void json_fix_so(So *out, So json_str) {
-    So_Ref ref = so_ref(json_str);
+    So ref = json_str;
     int escape = 0;
     size_t begin = 0;
     size_t j = 0;
@@ -346,7 +343,7 @@ void json_fix_so(So *out, So json_str) {
                     So_Uc_Point u8p = { .val = z };
                     So u8 = {0};
                     if(!so_uc_fmt_point(&u8, &u8p)) {
-                        So_Ref p = so_ref(u8);
+                        So p = u8;
                         ASSERT(p.len <= 3, "expect to have 3 or less characters (0xFFFF max)...");
                         for(size_t k = 0; k < p.len; ++k) {
                             *so_it(json_str, j++) = p.str[k];

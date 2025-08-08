@@ -1,7 +1,7 @@
-#ifndef RPHIIC_JSON_H
+#ifndef RLJSON_H
 
-#include <rl/err.h>
-#include <rl/so.h>
+#include <rlc/err.h>
+#include <rlso.h>
 
 #define JSON_DEPTH_MAX  4096
 
@@ -33,7 +33,7 @@ typedef struct JsonParseSettings {
 typedef void *(*JsonParseCallback)(void **user, JsonParseValue key, JsonParseValue *val);
 
 typedef struct JsonParse {
-    So_Ref head;
+    So head;
     JsonParseValue key;
     size_t depth;
     JsonParseCallback callback;
@@ -50,6 +50,6 @@ ErrDecl json_parse(So input, JsonParseCallback callback, void *user);
 
 void json_fix_so(So *out, So json_str); /* modifies the existing string; no additional memory allocation */
 
-#define RPHIIC_JSON_H
+#define RLJSON_H
 #endif
 
