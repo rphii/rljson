@@ -83,8 +83,7 @@ void *json_auto_parse_value(void **user, Json_Parse_Value key, Json_Parse_Value 
 
 ErrDecl json_auto_parse(So input, Json_Auto_Value *out) {
     ASSERT_ARG(out);
-    json_parse(input, json_auto_parse_value, out);
-    return 0;
+    return json_parse(input, json_auto_parse_value, out);
 }
 
 void json_auto_fmt_spacing(So *out, Json_Auto_Fmt *fmt, int nest) {
