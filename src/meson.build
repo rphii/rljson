@@ -1,5 +1,6 @@
 sources = [
   'rljson.c',
+  'rljson-auto.c',
   ]
 
 headers = [
