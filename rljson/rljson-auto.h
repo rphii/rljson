@@ -1,4 +1,6 @@
-#include "rljson.h"
+#ifndef RLJSON_AUTO_H
+
+#include "rljson-core.h"
 
 typedef enum {
     JSON_AUTO_VALUE_NULL,
@@ -38,4 +40,6 @@ void json_auto_print(Json_Auto_Value autojson, Json_Auto_Fmt *fmt);
 void json_auto_fmt(So *out, Json_Auto_Value autojson, Json_Auto_Fmt *fmt);
 void json_auto_free(Json_Auto_Value *autojson);
 
+#define RLJSON_AUTO_H
+#endif // RLJSON_AUTO_H
 
