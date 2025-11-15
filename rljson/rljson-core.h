@@ -48,7 +48,7 @@ ErrDecl json_parse_valid_ext(So input, Json_Parse *parse);
 ErrDecl json_parse(So input, Json_Parse_Callback callback, void *user);
 ErrDecl json_parse_ext(So input, Json_Parse_Callback callback, void *user, Json_Parse *parse);
 
-void json_fix_so(So *out, So json_str); /* modifies the existing string; no additional memory allocation */
+void json_fix_so(So json_str, So *out); /* modifies the existing string; no additional memory allocation */
 void json_parse_value_print(Json_Parse_Value *val);
 
 #define RLJSON_CORE_H
