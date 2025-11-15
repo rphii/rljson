@@ -1,0 +1,38 @@
+[
+    {
+        "id": 123,
+        "name": "Sir. README",
+        "icon": "\uD83D\uDDFF",
+        "activities": [
+            {
+                "activity": "code",
+                "icon": "\uD83D\uDCBB",
+                "when": "nightly"
+            },
+            {
+                "activity": "sleep",
+                "icon": "\uD83D\uDECC",
+                "when": "daily"
+            }
+        ]
+    },
+    {
+        "id": 123,
+        "name": "hacker",
+        "icon": "\uD83D\uDCA3",
+        "activities": [
+            {
+                "activity": "hack",
+                "icon": "\u306F\u304B",
+                "when": "daily"
+            },
+            {
+                "activity": "hack",
+                "icon": "🌇",
+                "when": "nightly"
+            }
+        ]
+    }
+]
+
+
