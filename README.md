@@ -5,9 +5,14 @@ Immediate json parser ([`rljson-core`](rljson/rljson-core.c)) and auto parser ([
 ## projects using `rljson`:
 
 - [`rphii/c-whvn`](https://github.com/rphii/c-whvn) wallhaven cli interface
-- [`rphii/rljson`](https://github.com/rphii/rljson) _(duh)_ see [`rljson-auto.c`](rljson/rljson-auto.c) (<90 loc json parser)
+- [`rphii/rljson`](https://github.com/rphii/rljson) _(duh)_ see [`rljson-auto.c`](rljson/rljson-auto.c) (<90 loc json parser, quite verbose, it could be less)
 
 ## implementing immediate json parser code
+
+noteworthy:
+
+- using `array_???` functions / `ABORT` macros from `rphii/rlc`, general helper library
+- using `so_???` functions from `rphii/rlso`, string library
 
 ### 0) reference object
 
