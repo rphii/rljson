@@ -543,7 +543,7 @@ person.activities[1].icon: 🌇
 person.activities[1].when: 2
 ```
 
-## auto parsing json parser code
+## auto parsing json
 
 ```c
 int main(int argc, char **argv) {
