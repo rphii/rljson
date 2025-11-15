@@ -330,11 +330,13 @@ ErrDecl json_parse(So input, Json_Parse_Callback callback, void *user) {
     return json_parse_ext(input, callback, user, &q);
 }
 
-void json_fix_so(So *out, So json_str) {
+void json_fix_so(So json_str, So *out) {
     So ref = json_str;
     int escape = 0;
     size_t begin = 0;
     size_t j = 0;
+    uint16_t w1 = 0;
+    uint16_t w2 = 0;
     for(size_t i = 0; i < ref.len; ++i) {
         char c = ref.str[i];
         if(!escape && c == '\\') {
@@ -357,17 +359,58 @@ void json_fix_so(So *out, So json_str) {
             --escape;
             if(escape == 3) begin = i;
             if(escape == 0) {
-                ASSERT(4 == i - begin + 1, "expect to have 4 characters...");
-                So num = so_ll(so_it(json_str, begin), 4);
-                size_t z = 0;
-                if(!so_as_size(num, &z, 16)) {
-                    So_Uc_Point u8p = { .val = z };
-                    So u8 = {0};
-                    if(!so_uc_fmt_point(&u8, &u8p)) {
-                        So p = u8;
-                        ASSERT(p.len <= 3, "expect to have 3 or less characters (0xFFFF max)...");
-                        for(size_t k = 0; k < p.len; ++k) {
-                            *so_it(json_str, j++) = p.str[k];
+                if(!(4 == i - begin + 1)) { // expect to have 4 characters...
+                    // TODO: err handling!
+                    // invalid...
+                    *so_it(json_str, j++) = c;
+                } else {
+                    So num = so_ll(so_it(json_str, begin), 4);
+                    size_t z = 0;
+                    uint32_t u32 = 0;
+                    bool go = false;
+                    if(!so_as_size(num, &z, 16)) {
+                        if(!w1) {
+                            if((z >> 10) == 0x36) { // high utf16 surrogate
+                                w1 = z;
+                                if(!(begin + 4 < json_str.len && so_at(json_str, begin + 4) == '\\' && so_at(json_str, begin + 5) == 'u')) {
+                                    // invalid...
+                                    u32 = z;
+                                    go = true;
+                                }
+                            }
+                            else
+                            {
+                                u32 = z;
+                                go = true;
+                                // okay, use w1!
+                            }
+                        }
+                        if(w1) {
+                            if((z >> 10) == 0x37) { // low utf16 surrogate
+                                w2 = z;
+                                go = true;
+                                u32 = (((uint32_t)w1 & 0x3FF) << 10) | ((uint32_t)w2 & 0x3FF) + 0x10000; // reconstruct utf16 from high+low surrogates
+                            } else {
+                                // invalid...
+                                u32 = w1;
+                                go = true;
+                            }
+                        }
+                        // now check if we wanna go:
+                        if(go) {
+                            So_Uc_Point u8p = { .val = u32 };
+                            So u8 = {0};
+                            if(!so_uc_fmt_point(&u8, &u8p)) {
+                                So p = u8;
+                                if(!w1 && !w2) {
+                                    ASSERT(p.len <= 3, "expect to have 3 or less characters (0xFFFF max)...");
+                                } else {
+                                    ASSERT(p.len <= 5, "expect to have 5 or less characters (0x10FFFF max)...");
+                                }
+                                for(size_t k = 0; k < p.len; ++k) {
+                                    *so_it(json_str, j++) = p.str[k];
+                                }
+                            }
                         }
                     }
                 }
