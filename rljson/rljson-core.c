@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <rlso.h>
 #include <rlc/err.h>
-#include "rljson.h"
+#include "rljson-core.h"
 
 bool json_parse_value(Json_Parse *p, Json_Parse_Value *v);
 
@@ -330,7 +330,6 @@ ErrDecl json_parse(So input, Json_Parse_Callback callback, void *user) {
     return json_parse_ext(input, callback, user, &q);
 }
 
-#if 0
 void json_fix_so(So *out, So json_str) {
     So ref = json_str;
     int escape = 0;
@@ -381,7 +380,6 @@ void json_fix_so(So *out, So json_str) {
     so_resize(&json_str, j);
     *out = json_str;
 }
-#endif
 
 void json_parse_value_print(Json_Parse_Value *val) {
     if(!val) return;
