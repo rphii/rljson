@@ -2,6 +2,7 @@
 
 #define VERBOSE_INFO    0
 #define EXPANDED        1
+#define AUTO            1
 
 typedef enum {
     README_FREQUENCY_NONE,
@@ -152,10 +153,10 @@ int main(int argc, char **argv) {
     So content = SO, path = SO; // empty string objects
 
 #if !(EXPANDED)
-    Readme readme = {0}; // to be parsed object
 
     so_path_join(&path, so_get_dir(so_l(argv[0])), so("readme.json")); // so_l() -> runtime length determination, so() compile time length determination
 
+    Readme readme = {0}; // to be parsed object
     if(so_file_read(path, &content))
         ABORT("failed reading file: %.*s", SO_F(path));
 
@@ -171,6 +172,18 @@ int main(int argc, char **argv) {
     if(so_file_read(path, &content))
         ABORT("failed reading file: %.*s", SO_F(path));
 
+#if AUTO
+
+    Json_Auto_Value json_auto = {0};
+    if(json_auto_parse(content, &json_auto))
+        ABORT("invalid json");
+
+    So out = SO;
+    json_auto_fmt(&out, json_auto, 0);
+    so_println(out);
+
+#else
+
     Readme *readmes = 0; // to be parsed object
     if(json_parse(content, parse_readmes, &readmes))
         ABORT("invalid json: %.*s", SO_F(content));
@@ -181,6 +194,8 @@ int main(int argc, char **argv) {
         Readme readme = array_at(readmes, i);
         readme_print(readme);
     }
+
+#endif
 
 #endif
 }

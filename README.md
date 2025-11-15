@@ -2,6 +2,10 @@
 
 Immediate json parser (rljson-core) and auto parser (rljson-auto).
 
+## projects using `rljson`:
+
+- [`rphii/c-whvn`](https://github.com/rphii/c-whvn) wallhaven cli interface
+
 ## implementing immediate json parser code
 
 ### 0) reference object
@@ -85,8 +89,7 @@ void *parse_readme(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
 compile, run, output:
 
 ```sh
-$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out
-$ ./examples/readme.out
+$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out && ./examples/readme.out
 ---parse_readme---
 KEY: [object] id
 VAL: [number] 123
@@ -245,8 +248,7 @@ lets also print the structure we get as a last thing in `main`:
 compile, run, output:
 
 ```sh
-$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out
-$ ./examples/readme.out
+$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out && ./examples/readme.out
 ---parse_readme---
 KEY: [object] id
 VAL: [number] 123
@@ -321,8 +323,7 @@ void *parse_activities(void **user, Json_Parse_Value key, Json_Parse_Value *val)
 compile, run, output:
 
 ```sh
-$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out
-$ ./examples/readme.out
+$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out && ./examples/readme.out
 ---parse_activities---
 KEY: [array] activities
 VAL: 
@@ -395,8 +396,7 @@ void *parse_activity(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
 compile, run, output:
 
 ```sh
-$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out
-$ ./examples/readme.out
+$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out && ./examples/readme.out
 person.id: 123
 person.name: Sir. README
 person.icon: 🗿
@@ -464,8 +464,7 @@ if we enable verbose output again, and read the new [`readme-expanded.json`](exa
 compile and run:
 
 ```sh
-$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out
-$ ./examples/readme.out
+$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out && ./examples/readme.out
 ---parse_readme---
 KEY: [array] 
 VAL: 
@@ -522,8 +521,7 @@ void *parse_readmes(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
 compile, run:
 
 ```sh
-$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out
-$ ./examples/readme.out
+$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out && ./examples/readme.out
 readme.length: 2
 readme[0]
 person.id: 123
@@ -545,7 +543,61 @@ person.activities[1].icon: 🌇
 person.activities[1].when: 2
 ```
 
-### other examples
+## auto parsing json parser code
 
-- [`rphii/c-whvn`](https://github.com/rphii/c-whvn) wallhaven cli interface
+```c
+int main(int argc, char **argv) {
+
+    so_path_join(&path, so_get_dir(so_l(argv[0])), so("readme-expanded.json"));
+
+    if(so_file_read(path, &content))
+        ABORT("failed reading file: %.*s", SO_F(path));
+
+    So out = SO;
+    json_auto_fmt(&out, json_auto, 0);
+    so_println(out);
+}
+```
+
+compile, run, output:
+
+```sh
+$ gcc examples/readme.c rljson/*.c -lrlc -lrlso -o examples/readme.out && ./examples/readme.out 
+[
+  {
+    "id": 123,
+    "name": "Sir. README",
+    "icon": "\uD83D\uDDFF",
+    "activities": [
+      {
+        "activity": "code",
+        "icon": "\uD83D\uDCBB",
+        "when": "nightly"
+      },
+      {
+        "activity": "sleep",
+        "icon": "\uD83D\uDECC",
+        "when": "daily"
+      }
+    ]
+  },
+  {
+    "id": 123,
+    "name": "hacker",
+    "icon": "\uD83D\uDCA3",
+    "activities": [
+      {
+        "activity": "hack",
+        "icon": "\u306F\u304B",
+        "when": "daily"
+      },
+      {
+        "activity": "hack",
+        "icon": "🌇",
+        "when": "nightly"
+      }
+    ]
+  }
+]
+```
 
