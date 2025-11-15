@@ -275,7 +275,7 @@ we see the `id`, `name` and `icon` are already okay. let's expand parsing the ac
 
 #### 4.1) add `parse_activity`
 
-now when we `parse_activities` what is actually indicates to us, is that we need a new array item (see previous/above output!)
+now when we `parse_activities`, what this actually indicates to us, is that we need a new array item (see previous/above output!)
 
 so, let's `array_push` onto our `activities`. pay attention to the pointer-ing!
 
