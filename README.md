@@ -5,6 +5,7 @@ Immediate json parser (rljson-core) and auto parser (rljson-auto).
 ## projects using `rljson`:
 
 - [`rphii/c-whvn`](https://github.com/rphii/c-whvn) wallhaven cli interface
+- [`rphii/rljson`](https://github.com/rphii/rljson) (duh) see [`rljson/rljson-auto.c`](rljson/rljson-auto.c)
 
 ## implementing immediate json parser code
 
