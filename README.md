@@ -472,7 +472,7 @@ VAL:
 [ABORT] examples/readme.c:103:parse_readme (end of trace) invalid readme structure, unexpected: 1
 ```
 
-which is to be expected. however, notice that we now get the KEY == array. lets add new function!
+which is to be expected. however, notice that we now get the KEY == array. lets add a new function!
 
 #### expand main
 
