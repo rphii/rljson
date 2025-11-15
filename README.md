@@ -116,6 +116,7 @@ void *parse_readme(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
     }
 
     return 0;
+}
 ```
 
 #### 3.3) parse `.name`
@@ -132,6 +133,7 @@ void *parse_readme(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
     }
 
     return 0;
+}
 ```
 
 #### 3.4) parse `.icon`
@@ -148,6 +150,7 @@ void *parse_readme(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
     }
 
     return 0;
+}
 ```
 
 #### 3.5) prepare to parse `.activities`
@@ -183,6 +186,7 @@ void *parse_readme(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
     }
 
     return 0;
+}
 ```
 
 ### 4) combining all previous
