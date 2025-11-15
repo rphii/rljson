@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <rlso.h>
+#include <rlc/err.h>
 #include "rljson.h"
 
-bool json_parse_value(JsonParse *p, JsonParseValue *v);
+bool json_parse_value(Json_Parse *p, Json_Parse_Value *v);
 
-So json_parse_value_str(JsonParseValue v) {
+So json_parse_value_str(Json_Parse_Value v) {
     switch(v.id) {
         case JSON_STRING:
         case JSON_OBJECT: //return so("OBJECT");
@@ -18,7 +19,7 @@ So json_parse_value_str(JsonParseValue v) {
 }
 
 /* return true on match */
-bool json_parse_ch(JsonParse *p, char c) {
+bool json_parse_ch(Json_Parse *p, char c) {
     ASSERT_ARG(p);
     if(!p->head.len) return false;
     bool result = (bool)(*p->head.str == c);
@@ -29,7 +30,7 @@ bool json_parse_ch(JsonParse *p, char c) {
 }
 
 /* return true on match */
-bool json_parse_any(JsonParse *p, char *s) {
+bool json_parse_any(Json_Parse *p, char *s) {
     ASSERT_ARG(p);
     if(!p->head.len) return false;
     char *result = strchr(s, *p->head.str);
@@ -40,16 +41,16 @@ bool json_parse_any(JsonParse *p, char *s) {
     return false;
 }
 
-void json_parse_ws(JsonParse *p) {
+void json_parse_ws(Json_Parse *p) {
     ASSERT_ARG(p);
-    while(json_parse_any(p, " \t\v\n")) {}
+    while(json_parse_any(p, " \t\v\n\r")) {}
 }
 
 /* return true on successful parse */
-bool json_parse_string(JsonParse *p, So *val) {
+bool json_parse_string(Json_Parse *p, So *val) {
     ASSERT_ARG(p);
     ASSERT_ARG(val);
-    JsonParse q = *p;
+    Json_Parse q = *p;
     if(!json_parse_ch(&q, '"')) goto invalid;
     int escape = 0;
     while(q.head.len) {
@@ -100,10 +101,10 @@ invalid:
     return false;
 }
 
-bool json_parse_bool(JsonParse *p, bool *val) {
+bool json_parse_bool(Json_Parse *p, bool *val) {
     ASSERT_ARG(p);
     ASSERT_ARG(val);
-    JsonParse q = *p;
+    Json_Parse q = *p;
     if(json_parse_ch(&q, 't')) {
         if(!json_parse_ch(&q, 'r')) return false;
         if(!json_parse_ch(&q, 'u')) return false;
@@ -134,10 +135,10 @@ bool json_parse_bool(JsonParse *p, bool *val) {
 #define JSON_DIGITS  "0123456789"
 #define JSON_DIGIT1  "123456789"
 
-bool json_parse_number(JsonParse *p, So *val) {
+bool json_parse_number(Json_Parse *p, So *val) {
     ASSERT_ARG(p);
     ASSERT_ARG(val);
-    JsonParse q = *p;
+    Json_Parse q = *p;
     json_parse_ch(&q, '-');
     if(json_parse_ch(&q, '0')) {
     } else if(json_parse_any(&q, JSON_DIGIT1)) {
@@ -166,9 +167,9 @@ bool json_parse_number(JsonParse *p, So *val) {
     return (bool)len;
 }
 
-bool json_parse_null(JsonParse *p) {
+bool json_parse_null(Json_Parse *p) {
     ASSERT_ARG(p);
-    JsonParse q = *p;
+    Json_Parse q = *p;
     if(json_parse_ch(&q, 'n')) {
         if(!json_parse_ch(&q, 'u')) return false;
         if(!json_parse_ch(&q, 'l')) return false;
@@ -182,10 +183,10 @@ bool json_parse_null(JsonParse *p) {
     return false;
 }
 
-bool json_parse_array(JsonParse *p) {
+bool json_parse_array(Json_Parse *p) {
     ASSERT_ARG(p);
-    JsonParseValue v = {0};
-    JsonParse q = *p;
+    Json_Parse_Value v = {0};
+    Json_Parse q = *p;
     if(!json_parse_ch(&q, '[')) return false;
     q.key.id = JSON_ARRAY;
     ++q.depth;
@@ -217,9 +218,9 @@ bool json_parse_array(JsonParse *p) {
     return true;
 }
 
-bool json_parse_object(JsonParse *p) {
+bool json_parse_object(Json_Parse *p) {
     ASSERT_ARG(p);
-    JsonParse q = *p;
+    Json_Parse q = *p;
     if(!json_parse_ch(&q, '{')) return false;
     q.key.id = JSON_OBJECT;
     ++q.depth;
@@ -229,8 +230,8 @@ bool json_parse_object(JsonParse *p) {
         if(p->callback) q.callback = p->callback(&q.user, p->key, 0);
     }
     json_parse_ws(&q);
-    JsonParseValue k = { .id = JSON_OBJECT };
-    JsonParseValue v = {0};
+    Json_Parse_Value k = { .id = JSON_OBJECT };
+    Json_Parse_Value v = {0};
     bool first = true;
     do {
         json_parse_ws(&q);
@@ -261,8 +262,8 @@ bool json_parse_object(JsonParse *p) {
     return true;
 }
 
-bool json_parse_value(JsonParse *p, JsonParseValue *v) {
-    JsonParse q = *p;
+bool json_parse_value(Json_Parse *p, Json_Parse_Value *v) {
+    Json_Parse q = *p;
     json_parse_ws(&q);
     if(json_parse_object(&q)) { v->id = JSON_OBJECT; goto valid; }
     if(json_parse_array(&q)) { v->id = JSON_ARRAY; goto valid; }
@@ -278,37 +279,58 @@ valid:
     return true;
 }
 
+ErrDecl json_parse_valid_ext(So input, Json_Parse *parse) {
+    Json_Parse_Value v = {0};
+    parse->head = input;
+    if(json_parse_value(parse, &v)) goto valid;
+    return -1;
+valid:
+    json_parse_ws(parse);
+    return parse->head.len;
+}
+
 ErrDecl json_parse_valid(So input) {
-    JsonParseValue v = {0};
-    JsonParse q = {
+    Json_Parse q = {
         .head = input,
         .settings.verbose = false,
     };
-    if(json_parse_value(&q, &v)) goto valid;
-    return -1;
-valid:
-    json_parse_ws(&q);
-    return q.head.len;
+    return json_parse_valid_ext(input, &q);
 }
 
-ErrDecl json_parse(So input, JsonParseCallback callback, void *user) {
-    if(json_parse_valid(input)) goto invalid;
-    JsonParseValue v = {0};
-    JsonParse q = {
+ErrDecl json_parse_ext(So input, Json_Parse_Callback callback, void *user, Json_Parse *parse) {
+    ASSERT_ARG(parse);
+    Json_Parse_Value v = {0};
+    json_parse_ws(parse);
+    if(json_parse_value(parse, &v)) goto valid;
+invalid:
+    return -1;
+valid:
+    switch(v.id) {
+        case JSON_OBJECT: {} break;
+        case JSON_ARRAY: {} break;
+        case JSON_BOOL: 
+        case JSON_NULL:
+        case JSON_NUMBER:
+        case JSON_STRING: {
+            callback(&user, v, 0);
+        } break;
+        default: ABORT(ERR_UNREACHABLE("invalid switch: %u"), v.id);
+    }
+    json_parse_ws(parse);
+    return parse->head.len;
+}
+
+ErrDecl json_parse(So input, Json_Parse_Callback callback, void *user) {
+    Json_Parse q = {
         .head = input,
         .callback = callback,
         .user = user,
         .settings.verbose = false,
     };
-    json_parse_ws(&q);
-    if(json_parse_value(&q, &v)) goto valid;
-invalid:
-    return -1;
-valid:
-    json_parse_ws(&q);
-    return q.head.len;
+    return json_parse_ext(input, callback, user, &q);
 }
 
+#if 0
 void json_fix_so(So *out, So json_str) {
     So ref = json_str;
     int escape = 0;
@@ -358,5 +380,31 @@ void json_fix_so(So *out, So json_str) {
     ASSERT(j <= so_len(json_str), "we only want to shrink the string!");
     so_resize(&json_str, j);
     *out = json_str;
+}
+#endif
+
+void json_parse_value_print(Json_Parse_Value *val) {
+    if(!val) return;
+    switch(val->id) {
+        case JSON_ARRAY: {
+            printf("[array] %.*s", SO_F(val->s));
+        } break;
+        case JSON_OBJECT: {
+            printf("[object] %.*s", SO_F(val->s));
+        } break;
+        case JSON_BOOL: {
+            printf("[bool] %s", val->b ? "true" : "false");
+        } break;
+        case JSON_NULL: {
+            printf("[null]");
+        } break;
+        case JSON_NUMBER: {
+            printf("[number] %.*s", SO_F(val->s));
+        } break;
+        case JSON_STRING: {
+            printf("[string] %.*s", SO_F(val->s));
+        } break;
+        default: ABORT(ERR_UNREACHABLE("invalid switch value: %u"), val->id);
+    }
 }
 

@@ -5,8 +5,6 @@
 
 #define JSON_DEPTH_MAX  4096
 
-typedef struct JsonParse JsonParse;
-
 typedef enum {
     //JSON_NONE,
     /* keep below */
@@ -16,39 +14,42 @@ typedef enum {
     JSON_NUMBER,
     JSON_BOOL,
     JSON_NULL,
-} JsonList;
+} Json_List;
 
-typedef struct JsonParseValue {
+typedef struct Json_Parse_Value {
     union {
         So s;
         bool b;
     };
-    JsonList id;
-} JsonParseValue;
+    Json_List id;
+} Json_Parse_Value;
 
-typedef struct JsonParseSettings {
+typedef struct Json_Parse_Settings {
     bool verbose;
-} JsonParseSettings;
+} Json_Parse_Settings;
 
-typedef void *(*JsonParseCallback)(void **user, JsonParseValue key, JsonParseValue *val);
+typedef void *(*Json_Parse_Callback)(void **user, Json_Parse_Value key, Json_Parse_Value *val);
 
-typedef struct JsonParse {
+typedef struct Json_Parse {
     So head;
-    JsonParseValue key;
+    Json_Parse_Value key;
     size_t depth;
-    JsonParseCallback callback;
-    JsonParseSettings settings;
+    Json_Parse_Callback callback;
+    Json_Parse_Settings settings;
     void *user;
-} JsonParse;
+} Json_Parse;
 
-So json_parse_value_str(JsonParseValue v);
+So json_parse_value_str(Json_Parse_Value v);
 
 ErrDecl json_parse_valid(So input);
+ErrDecl json_parse_valid_ext(So input, Json_Parse *parse);
 
 #define ERR_json_parse(...) "failed parsing json (invalid input)"
-ErrDecl json_parse(So input, JsonParseCallback callback, void *user);
+ErrDecl json_parse(So input, Json_Parse_Callback callback, void *user);
+ErrDecl json_parse_ext(So input, Json_Parse_Callback callback, void *user, Json_Parse *parse);
 
-void json_fix_so(So *out, So json_str); /* modifies the existing string; no additional memory allocation */
+//void json_fix_so(So *out, So json_str); /* modifies the existing string; no additional memory allocation */
+void json_parse_value_print(Json_Parse_Value *val);
 
 #define RLJSON_H
 #endif
