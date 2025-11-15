@@ -229,7 +229,7 @@ void *parse_readme(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
 
 lets also print the structure we get as a last thing in `main`:
 
-```
+```c
     printf("person.id: %u\n", readme.id);
     printf("person.name: %.*s\n", SO_F(readme.name));
     printf("person.icon: %.*s\n", SO_F(readme.icon));
@@ -279,7 +279,7 @@ now when we `parse_activities` what is actually indicates to us, is that we need
 
 so, let's `array_push` onto our `activities`. pay attention to the pointer-ing!
 
-```
+```c
 void *parse_activity(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
 
 #if VERBOSE_INFO
@@ -353,7 +353,7 @@ we're getting there, let's finish this up once and for all in the next section
 
 #### 4.2) parse activity
 
-```
+```c
 void *parse_activity(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
 
 #if VERBOSE_INFO
@@ -415,7 +415,7 @@ now you can easily expand upon this, say if this structure is a sub-structure of
 
 maybe your original structure now is in arrays like this:
 
-```
+```json
 [
     {
         "id": 123,
