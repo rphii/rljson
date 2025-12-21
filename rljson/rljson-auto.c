@@ -86,6 +86,11 @@ ErrDecl json_auto_parse(So input, Json_Auto_Value *out) {
     return json_parse(input, json_auto_parse_value, out);
 }
 
+ErrDecl json_auto_parse_ext(So input, Json_Auto_Value *out, Json_Parse_Settings *settings) {
+    ASSERT_ARG(out);
+    return json_parse_ext(input, json_auto_parse_value, out, settings);
+}
+
 void json_auto_fmt_spacing(So *out, Json_Auto_Fmt *fmt, int nest) {
     if(!fmt->pretty) return;
     if(fmt->tabs) {

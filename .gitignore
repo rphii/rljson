@@ -4,6 +4,7 @@
 *.vim
 *.swp
 *.json
+!tests/data/*.json
 src/callgrind.out.*
 temp
 src/civ.out

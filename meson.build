@@ -36,4 +36,7 @@ rljson_dep = declare_dependency(
   include_directories: '.',
   )
 
+if get_option('tests').enabled()
+  subdir('tests')
+endif
 

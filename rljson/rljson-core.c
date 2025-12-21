@@ -6,6 +6,7 @@
 
 bool json_parse_value(Json_Parse *p, Json_Parse_Value *v);
 
+
 So json_parse_value_str(Json_Parse_Value v) {
     switch(v.id) {
         case JSON_STRING:
@@ -90,6 +91,8 @@ bool json_parse_string(Json_Parse *p, So *val) {
             if(so_uc_point(so_ll(q.head.str, q.head.len), &u8p)) {
                 goto invalid;
             }
+            if(u8p.val == '\t' && q.settings.strict) goto invalid;
+            if(u8p.val == '\n') goto invalid;
             q.head.str += u8p.bytes;
             q.head.len -= u8p.bytes;
         }
@@ -279,55 +282,53 @@ valid:
     return true;
 }
 
-ErrDecl json_parse_valid_ext(So input, Json_Parse *parse) {
-    Json_Parse_Value v = {0};
-    parse->head = input;
-    if(json_parse_value(parse, &v)) goto valid;
-    return -1;
-valid:
-    json_parse_ws(parse);
-    return parse->head.len;
+ErrDecl json_parse_valid_ext(So input, Json_Parse_Settings *settings) {
+    return json_parse_ext(input, 0, 0, settings);
 }
 
 ErrDecl json_parse_valid(So input) {
-    Json_Parse q = {
-        .head = input,
-        .settings.verbose = false,
-    };
-    return json_parse_valid_ext(input, &q);
+    Json_Parse_Settings settings = JSON_PARSE_SETTINGS_DEFAULT;
+    return json_parse_valid_ext(input, &settings);
 }
 
-ErrDecl json_parse_ext(So input, Json_Parse_Callback callback, void *user, Json_Parse *parse) {
-    ASSERT_ARG(parse);
+ErrDecl json_parse_ext(So input, Json_Parse_Callback callback, void *user, Json_Parse_Settings *settings) {
+    ASSERT_ARG(settings);
     Json_Parse_Value v = {0};
-    json_parse_ws(parse);
-    if(json_parse_value(parse, &v)) goto valid;
-invalid:
-    return -1;
-valid:
-    switch(v.id) {
-        case JSON_OBJECT: {} break;
-        case JSON_ARRAY: {} break;
-        case JSON_BOOL: 
-        case JSON_NULL:
-        case JSON_NUMBER:
-        case JSON_STRING: {
-            callback(&user, v, 0);
-        } break;
-        default: ABORT(ERR_UNREACHABLE("invalid switch: %u"), v.id);
+    Json_Parse parse = {
+        .head = input,
+        .user = user,
+        .callback = callback,
+        .settings = *settings,
+    };
+    json_parse_ws(&parse);
+    if(!json_parse_value(&parse, &v)) {
+        /* invalid json */
+        return -1;
     }
-    json_parse_ws(parse);
-    return parse->head.len;
+    if(parse.settings.strict) {
+        if(v.id != JSON_OBJECT && v.id != JSON_ARRAY) {
+            return -1;
+        }
+    } else {
+        switch(v.id) {
+            case JSON_OBJECT: {} break;
+            case JSON_ARRAY: {} break;
+            case JSON_BOOL: 
+            case JSON_NULL:
+            case JSON_NUMBER:
+            case JSON_STRING: {
+                callback(&user, v, 0);
+            } break;
+            default: ABORT(ERR_UNREACHABLE("invalid switch: %u"), v.id);
+        }
+    }
+    json_parse_ws(&parse);
+    return parse.head.len;
 }
 
 ErrDecl json_parse(So input, Json_Parse_Callback callback, void *user) {
-    Json_Parse q = {
-        .head = input,
-        .callback = callback,
-        .user = user,
-        .settings.verbose = false,
-    };
-    return json_parse_ext(input, callback, user, &q);
+    Json_Parse_Settings settings = JSON_PARSE_SETTINGS_DEFAULT;
+    return json_parse_ext(input, callback, user, &settings);
 }
 
 void json_fix_so(So json_str, So *out) {

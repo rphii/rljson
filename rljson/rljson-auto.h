@@ -36,6 +36,7 @@ typedef struct Json_Auto_Fmt {
 } Json_Auto_Fmt;
 
 ErrDecl json_auto_parse(So input, Json_Auto_Value *out);
+ErrDecl json_auto_parse_ext(So input, Json_Auto_Value *out, Json_Parse_Settings *settings);
 void json_auto_print(Json_Auto_Value autojson, Json_Auto_Fmt *fmt);
 void json_auto_fmt(So *out, Json_Auto_Value autojson, Json_Auto_Fmt *fmt);
 void json_auto_free(Json_Auto_Value *autojson);
