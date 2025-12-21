@@ -5,6 +5,14 @@
 
 #define JSON_DEPTH_MAX  4096
 
+#ifndef JSON_PARSE_SETTINGS_DEFAULT
+#define JSON_PARSE_SETTINGS_DEFAULT \
+    (Json_Parse_Settings){ \
+        .verbose = false, \
+        .strict = false, \
+    }
+#endif
+
 typedef enum {
     //JSON_NONE,
     /* keep below */
@@ -26,6 +34,7 @@ typedef struct Json_Parse_Value {
 
 typedef struct Json_Parse_Settings {
     bool verbose;
+    bool strict;
 } Json_Parse_Settings;
 
 typedef void *(*Json_Parse_Callback)(void **user, Json_Parse_Value key, Json_Parse_Value *val);
@@ -42,11 +51,11 @@ typedef struct Json_Parse {
 So json_parse_value_str(Json_Parse_Value v);
 
 ErrDecl json_parse_valid(So input);
-ErrDecl json_parse_valid_ext(So input, Json_Parse *parse);
+ErrDecl json_parse_valid_ext(So input, Json_Parse_Settings *settings);
 
 #define ERR_json_parse(...) "failed parsing json (invalid input)"
 ErrDecl json_parse(So input, Json_Parse_Callback callback, void *user);
-ErrDecl json_parse_ext(So input, Json_Parse_Callback callback, void *user, Json_Parse *parse);
+ErrDecl json_parse_ext(So input, Json_Parse_Callback callback, void *user, Json_Parse_Settings *settings);
 
 void json_fix_so(So json_str, So *out); /* modifies the existing string; no additional memory allocation */
 void json_parse_value_print(Json_Parse_Value *val);
