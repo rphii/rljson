@@ -260,12 +260,10 @@ void json_auto_free(Json_Auto_Value *autojson) {
     if(!autojson) return;
     switch(autojson->id) {
         case JSON_AUTO_VALUE_ARRAY: {
-            array_free_set(autojson->arr, json_auto_free);
-            array_free(autojson->arr);
+            array_free_ext(autojson->arr, json_auto_free);
         } break;
         case JSON_AUTO_VALUE_OBJECT: {
-            array_free_set(autojson->dict, json_auto_free_kv);
-            array_free(autojson->dict);
+            array_free_ext(autojson->dict, json_auto_free_kv);
         } break;
         case JSON_AUTO_VALUE_STRING: {
             so_free(&autojson->so);
