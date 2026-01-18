@@ -318,7 +318,7 @@ void *parse_activities(void **user, Json_Parse_Value key, Json_Parse_Value *val)
 
     if(key.id == JSON_ARRAY) {
         array_push(*activities, (Readme_Activity){0});
-        *user = array_itE(*activities);
+        *user = array_itL(*activities);
         return parse_activity;
     } else {
         ABORT("unexpected id: %u", key.id);
@@ -513,7 +513,7 @@ void *parse_readmes(void **user, Json_Parse_Value key, Json_Parse_Value *val) {
 
     if(key.id == JSON_ARRAY) {
         array_push(*readmes, (Readme){0});
-        *user = array_itE(*readmes);
+        *user = array_itL(*readmes);
         return parse_readme;
     } else {
         ABORT("unexpected id: %u", key.id);
