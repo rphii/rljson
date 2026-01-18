@@ -43,7 +43,7 @@ void *json_auto_parse_array(void **user, Json_Parse_Value key, Json_Parse_Value 
     Json_Auto_Value *autoval = *(Json_Auto_Value **)user;
     autoval->id = JSON_AUTO_VALUE_ARRAY;
     array_push(autoval->arr, (Json_Auto_Value){0});
-    Json_Auto_Value *subuser = array_itE(autoval->arr);
+    Json_Auto_Value *subuser = array_itL(autoval->arr);
     if(val) {
         return json_auto_parse_value((void **)&subuser, *val, 0);
     } else {
@@ -56,7 +56,7 @@ void *json_auto_parse_object(void **user, Json_Parse_Value key, Json_Parse_Value
     Json_Auto_Value *autoval = *(Json_Auto_Value **)user;
     autoval->id = JSON_AUTO_VALUE_OBJECT;
     array_push(autoval->dict, (Json_Auto_Key_Value){0});
-    Json_Auto_Key_Value *subkv = array_itE(autoval->dict);
+    Json_Auto_Key_Value *subkv = array_itL(autoval->dict);
     subkv->key = key.s;
     Json_Auto_Value *subuser = &subkv->val;
     if(val) {

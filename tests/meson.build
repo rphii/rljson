@@ -1,10 +1,10 @@
 
 cur_src = meson.current_source_dir()
 
-dep_rlc = dependency('rlc', required: true)
-dep_rlso = dependency('rlso', required: true)
+rlc_dep = dependency('rlc', fallback : ['rlc', 'rlc_dep'], default_options: ['default_library=static'])
+rlso_dep = dependency('rlso', fallback : ['rlso', 'rlso_dep'], default_options: ['default_library=static'])
 
-ex = executable('test_rljson_exe', 'test.c', link_with: librljson, dependencies: [dep_rlc, dep_rlso])
+ex = executable('test_rljson_exe', 'test.c', link_with: librljson, dependencies: [rlc_dep, rlso_dep])
 
 pass_tests_non_strict = [
   'data/pass1.json',
