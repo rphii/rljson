@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     So content = SO;
     if(so_file_read(filename, &content)) ABORT("failed reading file: '%.*s'", SO_F(filename));
 
-    Json_Auto_Value json;
+    Json_Auto_Value json = {0};
     //bool result = json_parse_valid(content);
     bool result = json_auto_parse_ext(content, &json, &settings);
     if(result != expected) {
