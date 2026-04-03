@@ -1,4 +1,4 @@
-project('rljson', 'c')
+project('rljson', 'c', version: 'v0.0.1')
 
 sources = [
   'rljson/rljson-core.c',
